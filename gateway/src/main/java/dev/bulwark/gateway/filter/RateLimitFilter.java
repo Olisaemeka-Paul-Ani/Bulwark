@@ -3,6 +3,7 @@ package dev.bulwark.gateway.filter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -13,25 +14,27 @@ import org.springframework.web.server.ServerWebExchange;
 
 import dev.bulwark.gateway.client.Client;
 import dev.bulwark.gateway.ratelimit.RateLimitDecision;
+import dev.bulwark.gateway.ratelimit.RateLimitProperties;
 import dev.bulwark.gateway.ratelimit.RedisRateLimiter;
 import reactor.core.publisher.Mono;
 
 /**
- * Spends one token from the client's bucket per request. Allowed responses carry
+ * Spends one token from the client's bucket per request, using the capacity and refill rate of
+ * the client's tier. Allowed responses carry
  * {@code X-RateLimit-Remaining}; denied requests get {@code 429} with {@code Retry-After}.
  */
 @Component
+@EnableConfigurationProperties(RateLimitProperties.class)
 public class RateLimitFilter implements GlobalFilter, Ordered {
 
     public static final String REMAINING_HEADER = "X-RateLimit-Remaining";
 
-    private static final int CAPACITY = 20;
-    private static final double REFILL_PER_SECOND = 10;
-
     private final RedisRateLimiter limiter;
+    private final RateLimitProperties properties;
 
-    public RateLimitFilter(RedisRateLimiter limiter) {
+    public RateLimitFilter(RedisRateLimiter limiter, RateLimitProperties properties) {
         this.limiter = limiter;
+        this.properties = properties;
     }
 
     @Override
@@ -42,7 +45,8 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
             // chain is misconfigured. Fail loudly rather than silently skipping the limit.
             return Mono.error(new IllegalStateException("rate limit filter ran before client identification"));
         }
-        return limiter.tryConsume(client.clientId(), CAPACITY, REFILL_PER_SECOND)
+        RateLimitProperties.Tier tier = properties.forTier(client.tier());
+        return limiter.tryConsume(client.clientId(), tier.capacity(), tier.refillPerSecond())
                 .flatMap(decision -> {
                     exchange.getResponse().getHeaders().set(REMAINING_HEADER, Long.toString(decision.remaining()));
                     if (decision.allowed()) {

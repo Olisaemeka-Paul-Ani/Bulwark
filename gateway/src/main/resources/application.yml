@@ -27,6 +27,15 @@ spring:
                 - Path=/users,/users/**
 
 bulwark:
+  rate-limit:
+    # Token bucket per client tier: capacity = max burst, refill-per-second = sustained rate.
+    tiers:
+      free:
+        capacity: 20
+        refill-per-second: 10
+      pro:
+        capacity: 100
+        refill-per-second: 50
   client-cache:
     ttl: ${CLIENT_CACHE_TTL:60s}
     max-size: ${CLIENT_CACHE_MAX_SIZE:10000}
