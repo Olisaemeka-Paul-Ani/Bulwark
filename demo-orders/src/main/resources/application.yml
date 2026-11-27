@@ -1,0 +1,12 @@
+server:
+  port: ${PORT:8081}
+
+spring:
+  application:
+    name: demo-orders
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
