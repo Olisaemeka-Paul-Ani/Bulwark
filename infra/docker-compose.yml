@@ -61,6 +61,7 @@ services:
       ORDERS_URI: http://demo-orders:8081
       USERS_URI: http://demo-users:8082
       DB_HOST: postgres
+      REDIS_HOST: redis
       DB_NAME: ${POSTGRES_DB:-bulwark}
       DB_USER: ${POSTGRES_USER:-bulwark}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-bulwark}

@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   r2dbc:
     url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:bulwark}
     username: ${DB_USER:bulwark}
