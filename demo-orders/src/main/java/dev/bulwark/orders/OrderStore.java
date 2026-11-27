@@ -52,6 +52,16 @@ public class OrderStore {
                 .toList();
     }
 
+    public Order create(CreateOrderRequest request) {
+        long id = nextId.getAndIncrement();
+        BigDecimal total = request.unitPrice()
+                .multiply(BigDecimal.valueOf(request.quantity()))
+                .setScale(2, RoundingMode.HALF_UP);
+        Order order = new Order(id, request.customerId(), request.item(), request.quantity(), total, Instant.now());
+        orders.put(id, order);
+        return order;
+    }
+
     public Optional<Order> find(long id) {
         return Optional.ofNullable(orders.get(id));
     }
