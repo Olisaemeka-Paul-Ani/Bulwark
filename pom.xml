@@ -18,6 +18,10 @@
     <name>bulwark</name>
     <description>API security gateway with rate limiting, anomaly detection and quarantine</description>
 
+    <modules>
+        <module>common</module>
+    </modules>
+
     <properties>
         <java.version>21</java.version>
         <maven.compiler.release>21</maven.compiler.release>
@@ -33,6 +37,11 @@
                 <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>dev.bulwark</groupId>
+                <artifactId>common</artifactId>
+                <version>${project.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
