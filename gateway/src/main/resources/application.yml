@@ -22,6 +22,11 @@ spring:
               predicates:
                 - Path=/users,/users/**
 
+bulwark:
+  client-cache:
+    ttl: ${CLIENT_CACHE_TTL:60s}
+    max-size: ${CLIENT_CACHE_MAX_SIZE:10000}
+
 management:
   endpoints:
     web:
