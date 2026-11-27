@@ -8,6 +8,7 @@ package dev.bulwark.gateway.filter;
 public final class FilterOrder {
 
     public static final int CLIENT_IDENTITY = -300;
+    public static final int RATE_LIMIT = -100;
 
     private FilterOrder() {
     }
