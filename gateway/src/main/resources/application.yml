@@ -4,6 +4,19 @@ server:
 spring:
   application:
     name: gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: orders
+              uri: ${ORDERS_URI:http://localhost:8081}
+              predicates:
+                - Path=/orders,/orders/**
+            - id: users
+              uri: ${USERS_URI:http://localhost:8082}
+              predicates:
+                - Path=/users,/users/**
 
 management:
   endpoints:
