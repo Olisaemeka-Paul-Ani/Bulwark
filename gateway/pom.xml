@@ -40,6 +40,11 @@
             <artifactId>r2dbc-postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <!-- Plain JDBC for the quarantine LISTEN connection, which R2DBC can't share. -->
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
