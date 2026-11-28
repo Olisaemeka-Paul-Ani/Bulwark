@@ -4,7 +4,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import dev.bulwark.common.FeatureVector;
@@ -25,8 +24,8 @@ public class TrainingBuffer implements WindowListener {
     private final int capacity;
     private final Deque<FeatureVector> vectors = new ArrayDeque<>();
 
-    public TrainingBuffer(@Value("${sentinel.model.training-buffer-size:20000}") int capacity) {
-        this.capacity = capacity;
+    public TrainingBuffer(ModelProperties properties) {
+        this.capacity = properties.trainingBufferSize();
     }
 
     @Override

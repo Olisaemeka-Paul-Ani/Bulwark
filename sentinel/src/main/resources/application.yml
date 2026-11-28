@@ -13,6 +13,9 @@ sentinel:
   model:
     # Most recent windows kept as training data.
     training-buffer-size: 20000
+    min-training-windows: 50
+    trees: 200
+    subsample: 0.7
   window:
     size: 30s
     # How long after a window ends it stays open for late events (e.g. from the other gateway).

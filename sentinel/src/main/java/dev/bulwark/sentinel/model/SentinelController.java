@@ -1,9 +1,13 @@
 package dev.bulwark.sentinel.model;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -13,9 +17,26 @@ import org.springframework.web.bind.annotation.RestController;
 public class SentinelController {
 
     private final TrainingBuffer buffer;
+    private final AnomalyModel model;
 
-    public SentinelController(TrainingBuffer buffer) {
+    public SentinelController(TrainingBuffer buffer, AnomalyModel model) {
         this.buffer = buffer;
+        this.model = model;
+    }
+
+    /** Trains a new forest on the buffered windows, which should all come from normal traffic. */
+    @PostMapping("/train")
+    public ResponseEntity<Map<String, Object>> train() {
+        try {
+            AnomalyModel.Trained trained = model.train(buffer.snapshot());
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("windows", trained.windows());
+            body.put("trees", trained.forest().size());
+            body.put("trainedAt", trained.trainedAt().toString());
+            return ResponseEntity.ok(body);
+        } catch (AnomalyModel.NotEnoughDataException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/training-buffer")
