@@ -118,6 +118,10 @@ public class QuarantineListener implements SmartLifecycle {
         connects.incrementAndGet();
         log.info("listening on {}", CHANNEL);
         PGConnection pg = connection.unwrap(PGConnection.class);
+        long resyncEveryMs = store.properties().resyncInterval().toMillis();
+        long sweepEveryMs = store.properties().sweepInterval().toMillis();
+        long lastResync = System.currentTimeMillis();
+        long lastSweep = lastResync;
         while (running) {
             PGNotification[] notifications = pg.getNotifications(POLL_TIMEOUT_MS);
             if (notifications != null) {
@@ -125,13 +129,25 @@ public class QuarantineListener implements SmartLifecycle {
                     handle(notification.getParameter());
                 }
             }
+            long now = System.currentTimeMillis();
+            if (now - lastResync >= resyncEveryMs) {
+                resync();
+                lastResync = now;
+                lastSweep = now; // resync only loads unexpired rows, so it sweeps too
+            } else if (now - lastSweep >= sweepEveryMs) {
+                int removed = registry.removeExpired();
+                if (removed > 0) {
+                    log.debug("swept {} expired quarantine entries", removed);
+                }
+                lastSweep = now;
+            }
         }
     }
 
     private void resync() throws SQLException {
         List<QuarantineEntry> active = store.loadActive(connection);
         registry.replaceAll(active);
-        log.info("quarantine resync: {} active entries", active.size());
+        log.debug("quarantine resync: {} active entries", active.size());
     }
 
     private boolean sleep(Duration duration) {
