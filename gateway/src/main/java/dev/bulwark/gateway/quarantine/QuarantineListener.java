@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.postgresql.PGConnection;
 import org.postgresql.PGNotification;
@@ -31,7 +33,10 @@ public class QuarantineListener implements SmartLifecycle {
     private final QuarantineStore store;
     private final QuarantineRegistry registry;
 
+    private final AtomicLong connects = new AtomicLong();
+
     private volatile boolean running;
+    private volatile boolean connected;
     private volatile Thread thread;
     private volatile Connection connection;
 
@@ -61,28 +66,70 @@ public class QuarantineListener implements SmartLifecycle {
         return running;
     }
 
+    /** Whether the listener currently holds a live LISTEN session. */
+    public boolean isConnected() {
+        return connected;
+    }
+
+    /** How many times the listener has (re)established its LISTEN session. */
+    public long connectCount() {
+        return connects.get();
+    }
+
     private void run() {
-        try {
-            connection = store.connect();
-            try (Statement statement = connection.createStatement()) {
-                statement.execute("LISTEN " + CHANNEL);
+        Duration initial = store.properties().reconnectInitialBackoff();
+        Duration max = store.properties().reconnectMaxBackoff();
+        Duration backoff = initial;
+        while (running) {
+            try {
+                listen();
+            } catch (SQLException e) {
+                if (!running) {
+                    break;
+                }
+                if (connected) {
+                    // We had a working session, so this is a fresh outage: start backing off from scratch.
+                    backoff = initial;
+                }
+                log.warn("quarantine listener disconnected, retrying in {} ms: {}", backoff.toMillis(), e.toString());
+            } finally {
+                connected = false;
+                closeConnection();
             }
-            log.info("listening on {}", CHANNEL);
-            PGConnection pg = connection.unwrap(PGConnection.class);
-            while (running) {
-                PGNotification[] notifications = pg.getNotifications(POLL_TIMEOUT_MS);
-                if (notifications != null) {
-                    for (PGNotification notification : notifications) {
-                        handle(notification.getParameter());
-                    }
+            if (!sleep(backoff)) {
+                break;
+            }
+            backoff = backoff.multipliedBy(2).compareTo(max) > 0 ? max : backoff.multipliedBy(2);
+        }
+    }
+
+    /** Opens a session and processes notifications until stopped or the connection fails. */
+    private void listen() throws SQLException {
+        connection = store.connect();
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("LISTEN " + CHANNEL);
+        }
+        connected = true;
+        connects.incrementAndGet();
+        log.info("listening on {}", CHANNEL);
+        PGConnection pg = connection.unwrap(PGConnection.class);
+        while (running) {
+            PGNotification[] notifications = pg.getNotifications(POLL_TIMEOUT_MS);
+            if (notifications != null) {
+                for (PGNotification notification : notifications) {
+                    handle(notification.getParameter());
                 }
             }
-        } catch (SQLException e) {
-            if (running) {
-                log.warn("quarantine listener stopped: {}", e.toString());
-            }
-        } finally {
-            closeConnection();
+        }
+    }
+
+    private boolean sleep(Duration duration) {
+        try {
+            Thread.sleep(duration);
+            return running;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
         }
     }
 

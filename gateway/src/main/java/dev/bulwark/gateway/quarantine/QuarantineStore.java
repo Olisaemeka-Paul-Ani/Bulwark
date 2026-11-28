@@ -28,6 +28,10 @@ public class QuarantineStore {
 
     private final QuarantineProperties properties;
 
+    public QuarantineProperties properties() {
+        return properties;
+    }
+
     public QuarantineStore(QuarantineProperties properties) {
         this.properties = properties;
     }
@@ -38,6 +42,8 @@ public class QuarantineStore {
         props.setProperty("user", properties.username());
         props.setProperty("password", properties.password());
         props.setProperty("ApplicationName", "bulwark-gateway-quarantine");
+        // Lets the OS notice a silently dropped connection instead of the listener waiting forever.
+        props.setProperty("tcpKeepAlive", "true");
         return DriverManager.getConnection(properties.jdbcUrl(), props);
     }
 
