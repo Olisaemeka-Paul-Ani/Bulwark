@@ -16,7 +16,8 @@ sentinel:
     grace: 5s
   stream:
     group: sentinel
-    # Unique per sentinel instance so a second replica would share the work, not duplicate it.
+    # Run one sentinel. The group hands out entries per message, not per client, so a second
+    # replica would see only part of each client's window.
     consumer: ${HOSTNAME:sentinel-1}
     batch-size: 500
 
