@@ -37,6 +37,10 @@ public final class FeatureExtractor {
             }
         }
 
+        double[] gaps = interArrivalGaps(events);
+        double meanGap = gaps.length == 0 ? window.windowSizeMs() : mean(gaps);
+        double cvGap = gaps.length < 2 || meanGap == 0 ? 0 : stddev(gaps, meanGap) / meanGap;
+
         return new FeatureVector(
                 window.clientId(),
                 window.windowStartMs(),
@@ -45,8 +49,8 @@ public final class FeatureExtractor {
                 (double) authFailures / count,
                 pathCounts.size(),
                 entropy(pathCounts.values(), count),
-                0,
-                0,
+                meanGap,
+                cvGap,
                 0,
                 0);
     }
@@ -63,5 +67,34 @@ public final class FeatureExtractor {
             h -= p * (Math.log(p) / Math.log(2));
         }
         return h == 0 ? 0 : h; // avoid -0.0
+    }
+
+    /**
+     * Gaps between consecutive requests (events are sorted by ts). With a single request there is
+     * no gap, so the mean falls back to the window length and the CV to 0.
+     */
+    static double[] interArrivalGaps(List<RequestEvent> events) {
+        double[] gaps = new double[Math.max(0, events.size() - 1)];
+        for (int i = 1; i < events.size(); i++) {
+            gaps[i - 1] = events.get(i).ts() - events.get(i - 1).ts();
+        }
+        return gaps;
+    }
+
+    private static double mean(double[] values) {
+        double sum = 0;
+        for (double v : values) {
+            sum += v;
+        }
+        return sum / values.length;
+    }
+
+    /** Population standard deviation: the window is the whole population we're describing. */
+    private static double stddev(double[] values, double mean) {
+        double squares = 0;
+        for (double v : values) {
+            squares += (v - mean) * (v - mean);
+        }
+        return Math.sqrt(squares / values.length);
     }
 }
