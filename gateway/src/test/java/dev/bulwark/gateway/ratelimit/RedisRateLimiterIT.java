@@ -86,14 +86,9 @@ class RedisRateLimiterIT {
 
         Thread.sleep(200); // would be 20 tokens without the cap
 
-        int allowed = 0;
-        for (int i = 0; i < 10; i++) {
-            if (limiter.tryConsume(client, 3, 100).block().allowed()) {
-                allowed++;
-            }
-        }
-        // 3 from the capped bucket, plus at most one refilled while the loop runs.
-        assertThat(allowed).isBetween(3, 4);
+        // A full bucket of 3 minus the token this request takes. Checking the count reported by a
+        // single request keeps the assertion independent of how fast the test runs.
+        assertThat(limiter.tryConsume(client, 3, 100).block().remaining()).isEqualTo(2);
     }
 
     @Test
