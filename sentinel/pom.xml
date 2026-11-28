@@ -14,6 +14,10 @@
     <name>sentinel</name>
     <description>Behavioural anomaly detector: request windows, features, Isolation Forest, auto-quarantine</description>
 
+    <properties>
+        <smile.version>4.4.2</smile.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>dev.bulwark</groupId>
@@ -30,6 +34,19 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <!-- 4.4.x is the last Smile line compiled for Java 21; 5.x and later need Java 25. -->
+            <groupId>com.github.haifengl</groupId>
+            <artifactId>smile-core</artifactId>
+            <version>${smile.version}</version>
+            <exclusions>
+                <!-- Native BLAS/LAPACK for four platforms (~100MB). Isolation Forest is pure Java. -->
+                <exclusion>
+                    <groupId>org.bytedeco</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
