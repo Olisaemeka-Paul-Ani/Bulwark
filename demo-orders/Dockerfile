@@ -7,6 +7,7 @@ COPY common/pom.xml common/
 COPY gateway/pom.xml gateway/
 COPY demo-orders/pom.xml demo-orders/
 COPY demo-users/pom.xml demo-users/
+COPY sentinel/pom.xml sentinel/
 COPY common/src common/src
 COPY demo-orders/src demo-orders/src
 RUN --mount=type=cache,target=/root/.m2 ./mvnw -q -B -pl demo-orders -am package -DskipTests

@@ -23,6 +23,7 @@
         <module>demo-orders</module>
         <module>demo-users</module>
         <module>gateway</module>
+        <module>sentinel</module>
     </modules>
 
     <properties>
