@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.postgresql.PGConnection;
@@ -109,6 +110,10 @@ public class QuarantineListener implements SmartLifecycle {
         try (Statement statement = connection.createStatement()) {
             statement.execute("LISTEN " + CHANNEL);
         }
+        // NOTIFY isn't durable: anything sent while we were disconnected is gone. Reload the whole
+        // table now. LISTEN runs first, so a change committed while the snapshot loads arrives as a
+        // queued notification afterwards instead of falling into a gap between the two.
+        resync();
         connected = true;
         connects.incrementAndGet();
         log.info("listening on {}", CHANNEL);
@@ -121,6 +126,12 @@ public class QuarantineListener implements SmartLifecycle {
                 }
             }
         }
+    }
+
+    private void resync() throws SQLException {
+        List<QuarantineEntry> active = store.loadActive(connection);
+        registry.replaceAll(active);
+        log.info("quarantine resync: {} active entries", active.size());
     }
 
     private boolean sleep(Duration duration) {
