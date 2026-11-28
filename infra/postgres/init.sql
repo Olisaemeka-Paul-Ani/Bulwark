@@ -11,3 +11,13 @@ CREATE TABLE clients (
   is_attacker BOOLEAN NOT NULL DEFAULT false,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Clients currently blocked at the gateway. Every gateway node keeps an in-memory copy of this
+-- table, kept current by LISTEN/NOTIFY plus periodic resyncs.
+CREATE TABLE quarantine (
+  client_id  TEXT PRIMARY KEY,
+  reason     TEXT NOT NULL,              -- 'anomaly' | 'manual'
+  score      DOUBLE PRECISION,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL
+);
