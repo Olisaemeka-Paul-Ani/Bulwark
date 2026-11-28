@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -q -B -pl sentinel -am package -D
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-RUN useradd --system --uid 1001 app
+RUN useradd --system --uid 1001 app && mkdir /app/models && chown app /app/models
 COPY --from=build /src/sentinel/target/sentinel-*.jar app.jar
 USER app
 EXPOSE 8090

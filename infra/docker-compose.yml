@@ -99,6 +99,9 @@ services:
       DB_NAME: ${POSTGRES_DB:-bulwark}
       DB_USER: ${POSTGRES_USER:-bulwark}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-bulwark}
+      MODEL_PATH: /app/models/isolation-forest.bin
+    volumes:
+      - sentinel-models:/app/models
     ports:
       - "8090:8090"
     depends_on:
@@ -129,3 +132,4 @@ services:
 
 volumes:
   pgdata:
+  sentinel-models:

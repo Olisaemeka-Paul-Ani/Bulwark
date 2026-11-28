@@ -16,6 +16,7 @@ sentinel:
     min-training-windows: 50
     trees: 200
     subsample: 0.7
+    path: ${MODEL_PATH:models/isolation-forest.bin}
   window:
     size: 30s
     # How long after a window ends it stays open for late events (e.g. from the other gateway).
