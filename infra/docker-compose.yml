@@ -89,6 +89,27 @@ services:
     ports:
       - "8092:8080"
 
+  sentinel:
+    build:
+      context: ..
+      dockerfile: sentinel/Dockerfile
+    environment:
+      REDIS_HOST: redis
+      DB_HOST: postgres
+      DB_NAME: ${POSTGRES_DB:-bulwark}
+      DB_USER: ${POSTGRES_USER:-bulwark}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-bulwark}
+    ports:
+      - "8090:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8090/actuator/health"]
+      <<: *java-healthcheck
+
   nginx:
     image: nginx:1.27-alpine
     volumes:
