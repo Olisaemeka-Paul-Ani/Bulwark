@@ -48,3 +48,18 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER quarantine_changed
 AFTER INSERT OR UPDATE OR DELETE ON quarantine
 FOR EACH ROW EXECUTE FUNCTION notify_quarantine_changed();
+
+-- One row per scored window, written by sentinel. Used for the Grafana detections panel and for
+-- eval (precision/recall/FPR and time-to-quarantine).
+CREATE TABLE detections (
+  id           BIGSERIAL PRIMARY KEY,
+  client_id    TEXT NOT NULL,
+  window_start TIMESTAMPTZ NOT NULL,
+  score        DOUBLE PRECISION NOT NULL,
+  flagged      BOOLEAN NOT NULL,
+  features     JSONB NOT NULL,
+  detected_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX detections_client_window ON detections (client_id, window_start);
+CREATE INDEX detections_detected_at ON detections (detected_at);
