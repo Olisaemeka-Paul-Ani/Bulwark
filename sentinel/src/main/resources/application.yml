@@ -4,6 +4,17 @@ server:
 spring:
   application:
     name: sentinel
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+sentinel:
+  stream:
+    group: sentinel
+    # Unique per sentinel instance so a second replica would share the work, not duplicate it.
+    consumer: ${HOSTNAME:sentinel-1}
+    batch-size: 500
 
 management:
   endpoints:
