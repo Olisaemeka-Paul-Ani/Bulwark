@@ -26,13 +26,18 @@ public final class FeatureExtractor {
 
         int clientErrors = 0;
         int authFailures = 0;
+        int rateLimited = 0;
+        long requestBytes = 0;
         Map<String, Integer> pathCounts = new HashMap<>();
         for (RequestEvent e : events) {
             pathCounts.merge(e.path(), 1, Integer::sum);
+            requestBytes += e.requestBytes();
             int status = e.status();
-            if (status == 401 || status == 403) {
+            if (status == 429) {
+                rateLimited++;
+            } else if (status == 401 || status == 403) {
                 authFailures++;
-            } else if (status >= 400 && status < 500 && status != 429) {
+            } else if (status >= 400 && status < 500) {
                 clientErrors++;
             }
         }
@@ -51,8 +56,8 @@ public final class FeatureExtractor {
                 entropy(pathCounts.values(), count),
                 meanGap,
                 cvGap,
-                0,
-                0);
+                (double) requestBytes / count,
+                (double) rateLimited / count);
     }
 
     /**
