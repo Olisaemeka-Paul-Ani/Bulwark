@@ -2,6 +2,7 @@ package dev.bulwark.sentinel;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Sentinel watches the request events the gateways publish, scores each client's behaviour with
@@ -9,6 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * if sentinel is down, the gateways keep serving and enforcing existing quarantines.
  */
 @SpringBootApplication
+@EnableScheduling
 public class SentinelApplication {
 
     public static void main(String[] args) {
