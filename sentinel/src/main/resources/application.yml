@@ -16,6 +16,10 @@ spring:
       port: ${REDIS_PORT:6379}
 
 sentinel:
+  detection:
+    # Isolation Forest score in (0, 1) at or above which a window is flagged and the client quarantined.
+    threshold: ${DETECTION_THRESHOLD:0.6}
+    quarantine-expiry: ${QUARANTINE_EXPIRY:10m}
   model:
     # Most recent windows kept as training data.
     training-buffer-size: 20000

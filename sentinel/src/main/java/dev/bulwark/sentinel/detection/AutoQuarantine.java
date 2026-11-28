@@ -18,12 +18,13 @@ import org.springframework.stereotype.Component;
 public class AutoQuarantine implements DetectionListener {
 
     private static final Logger log = LoggerFactory.getLogger(AutoQuarantine.class);
-    static final int EXPIRY_MINUTES = 10;
 
     private final JdbcTemplate jdbc;
+    private final long expiryMinutes;
 
-    public AutoQuarantine(JdbcTemplate jdbc) {
+    public AutoQuarantine(JdbcTemplate jdbc, DetectionProperties properties) {
         this.jdbc = jdbc;
+        this.expiryMinutes = properties.quarantineExpiry().toMinutes();
     }
 
     @Override
@@ -39,9 +40,9 @@ public class AutoQuarantine implements DetectionListener {
                             ON CONFLICT (client_id) DO UPDATE
                               SET score = EXCLUDED.score, expires_at = EXCLUDED.expires_at
                               WHERE quarantine.reason = 'anomaly'""",
-                    clientId, detection.score(), EXPIRY_MINUTES);
+                    clientId, detection.score(), expiryMinutes);
             if (rows > 0) {
-                log.info("quarantined {} for {} min (score {})", clientId, EXPIRY_MINUTES,
+                log.info("quarantined {} for {} min (score {})", clientId, expiryMinutes,
                         String.format("%.3f", detection.score()));
             }
         } catch (DataAccessException e) {
