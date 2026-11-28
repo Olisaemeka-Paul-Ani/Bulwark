@@ -21,3 +21,30 @@ CREATE TABLE quarantine (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   expires_at TIMESTAMPTZ NOT NULL
 );
+
+-- Tell every listening gateway about each quarantine change. NOTIFY is only delivered to
+-- sessions listening at commit time, so gateways also resync from the table itself (see
+-- QuarantineListener); the notification is the fast path, not the source of truth.
+CREATE FUNCTION notify_quarantine_changed() RETURNS trigger AS $$
+DECLARE
+  r quarantine;
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    r := OLD;
+  ELSE
+    r := NEW;
+  END IF;
+  PERFORM pg_notify('quarantine_changed', json_build_object(
+    'op', TG_OP,
+    'clientId', r.client_id,
+    'reason', r.reason,
+    'score', r.score,
+    'expiresAtMs', (extract(epoch FROM r.expires_at) * 1000)::bigint
+  )::text);
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER quarantine_changed
+AFTER INSERT OR UPDATE OR DELETE ON quarantine
+FOR EACH ROW EXECUTE FUNCTION notify_quarantine_changed();
