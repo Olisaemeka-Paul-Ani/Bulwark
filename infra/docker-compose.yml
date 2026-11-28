@@ -53,11 +53,12 @@ services:
       test: ["CMD", "curl", "-fs", "http://localhost:8082/actuator/health"]
       <<: *java-healthcheck
 
-  gateway:
+  gateway-1: &gateway
     build:
       context: ..
       dockerfile: gateway/Dockerfile
-    environment:
+    environment: &gateway-env
+      GATEWAY_NODE: gateway-1
       ORDERS_URI: http://demo-orders:8081
       USERS_URI: http://demo-users:8082
       DB_HOST: postgres
@@ -66,7 +67,7 @@ services:
       DB_USER: ${POSTGRES_USER:-bulwark}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-bulwark}
     ports:
-      - "8080:8080"
+      - "8091:8080"   # direct access to this replica, bypassing nginx
     depends_on:
       postgres:
         condition: service_healthy
@@ -79,6 +80,31 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-fs", "http://localhost:8080/actuator/health"]
       <<: *java-healthcheck
+
+  gateway-2:
+    <<: *gateway
+    environment:
+      <<: *gateway-env
+      GATEWAY_NODE: gateway-2
+    ports:
+      - "8092:8080"
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      gateway-1:
+        condition: service_healthy
+      gateway-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/nginx-health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
 volumes:
   pgdata:
