@@ -36,6 +36,15 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <!-- 4.4.x is the last Smile line compiled for Java 21; 5.x and later need Java 25. -->
             <groupId>com.github.haifengl</groupId>
             <artifactId>smile-core</artifactId>
