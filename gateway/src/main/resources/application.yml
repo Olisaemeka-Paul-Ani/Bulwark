@@ -38,6 +38,9 @@ bulwark:
       pro:
         capacity: 100
         refill-per-second: 50
+  events:
+    # Approximate cap on the bulwark:events stream; older entries are trimmed on write.
+    stream-max-length: ${EVENTS_STREAM_MAX_LENGTH:500000}
   quarantine:
     jdbc-url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:bulwark}
     username: ${DB_USER:bulwark}

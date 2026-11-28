@@ -1,5 +1,8 @@
 package dev.bulwark.common;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * One proxied request, as seen by a gateway node after the response was sent.
  *
@@ -26,4 +29,38 @@ public record RequestEvent(
         long requestBytes,
         long responseBytes,
         String gatewayNode) {
+
+    /** Redis stream the gateways publish to and sentinel consumes from. */
+    public static final String STREAM = "bulwark:events";
+
+    /** Flat string fields for a Redis stream entry. */
+    public Map<String, String> toFields() {
+        Map<String, String> fields = new HashMap<>();
+        if (clientId != null) {
+            fields.put("clientId", clientId);
+        }
+        fields.put("ts", Long.toString(ts));
+        fields.put("method", method);
+        fields.put("path", path);
+        fields.put("status", Integer.toString(status));
+        fields.put("latencyMs", Long.toString(latencyMs));
+        fields.put("requestBytes", Long.toString(requestBytes));
+        fields.put("responseBytes", Long.toString(responseBytes));
+        fields.put("gatewayNode", gatewayNode);
+        return fields;
+    }
+
+    /** Inverse of {@link #toFields()}. */
+    public static RequestEvent fromFields(Map<String, String> fields) {
+        return new RequestEvent(
+                fields.get("clientId"),
+                Long.parseLong(fields.get("ts")),
+                fields.get("method"),
+                fields.get("path"),
+                Integer.parseInt(fields.get("status")),
+                Long.parseLong(fields.get("latencyMs")),
+                Long.parseLong(fields.get("requestBytes")),
+                Long.parseLong(fields.get("responseBytes")),
+                fields.get("gatewayNode"));
+    }
 }
