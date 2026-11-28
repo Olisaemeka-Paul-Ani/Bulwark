@@ -27,6 +27,8 @@ spring:
                 - Path=/users,/users/**
 
 bulwark:
+  # Identifies this replica in request events (gateway-1, gateway-2, ...).
+  node-id: ${GATEWAY_NODE:local}
   rate-limit:
     # Token bucket per client tier: capacity = max burst, refill-per-second = sustained rate.
     tiers:
